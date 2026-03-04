@@ -94,6 +94,8 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.flatten.FlattenPdfT
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.flatten.screenLogic.FlattenPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.grayscale.GrayscalePdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.grayscale.screenLogic.GrayscalePdfToolComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.images_to_pdf.ImagesToPdfToolContent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.images_to_pdf.screenLogic.ImagesToPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.merge.MergePdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.merge.screenLogic.MergePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.metadata.MetadataPdfToolContent
@@ -102,6 +104,8 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.ocr.OCRPdfToolConte
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.ocr.screenLogic.OCRPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.page_numbers.PageNumbersPdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.page_numbers.screenLogic.PageNumbersPdfToolComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.preview.PreviewPdfToolContent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.preview.screenLogic.PreviewPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.print.PrintPdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.print.screenLogic.PrintPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.protect.ProtectPdfToolContent
@@ -519,4 +523,13 @@ internal sealed interface NavigationChild {
         override fun Content() = PrintPdfToolContent(component)
     }
 
+    class PreviewPdfTool(private val component: PreviewPdfToolComponent) : NavigationChild {
+        @Composable
+        override fun Content() = PreviewPdfToolContent(component)
+    }
+
+    class ImagesToPdfTool(private val component: ImagesToPdfToolComponent) : NavigationChild {
+        @Composable
+        override fun Content() = ImagesToPdfToolContent(component)
+    }
 }

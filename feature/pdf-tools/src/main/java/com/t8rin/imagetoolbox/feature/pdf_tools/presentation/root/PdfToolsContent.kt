@@ -61,25 +61,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.t8rin.imagetoolbox.core.domain.image.model.ImageFormat
 import com.t8rin.imagetoolbox.core.domain.image.model.Preset
-import com.t8rin.imagetoolbox.core.domain.image.model.Quality
 import com.t8rin.imagetoolbox.core.domain.model.ExtraDataType
 import com.t8rin.imagetoolbox.core.domain.model.MimeType
 import com.t8rin.imagetoolbox.core.resources.R
-import com.t8rin.imagetoolbox.core.resources.icons.AddPhotoAlt
 import com.t8rin.imagetoolbox.core.resources.icons.ArtTrack
 import com.t8rin.imagetoolbox.core.resources.icons.Pdf
-import com.t8rin.imagetoolbox.core.resources.icons.Preview
-import com.t8rin.imagetoolbox.core.ui.utils.content_pickers.rememberFileCreator
 import com.t8rin.imagetoolbox.core.ui.utils.content_pickers.rememberFilePicker
-import com.t8rin.imagetoolbox.core.ui.utils.content_pickers.rememberImagePicker
 import com.t8rin.imagetoolbox.core.ui.utils.helper.isPortraitOrientationAsState
 import com.t8rin.imagetoolbox.core.ui.utils.navigation.Screen
 import com.t8rin.imagetoolbox.core.ui.utils.provider.rememberLocalEssentials
 import com.t8rin.imagetoolbox.core.ui.widget.buttons.ShareButton
-import com.t8rin.imagetoolbox.core.ui.widget.controls.ImageReorderCarousel
-import com.t8rin.imagetoolbox.core.ui.widget.controls.ScaleSmallImagesToLargeToggle
 import com.t8rin.imagetoolbox.core.ui.widget.controls.page.PageSelectionItem
 import com.t8rin.imagetoolbox.core.ui.widget.controls.selection.ImageFormatSelector
 import com.t8rin.imagetoolbox.core.ui.widget.controls.selection.PresetSelector
@@ -99,7 +91,6 @@ import com.t8rin.imagetoolbox.core.ui.widget.sheets.ProcessImagesPreferenceSheet
 import com.t8rin.imagetoolbox.core.ui.widget.text.TitleItem
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.components.PdfToolsContentImpl
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.screenLogic.PdfToolsComponent
-import kotlinx.coroutines.delay
 
 @Composable
 fun PdfToolsContent(
@@ -117,24 +108,9 @@ fun PdfToolsContent(
         else component.onGoBack()
     }
 
-    val savePdfLauncher = rememberFileCreator(
-        mimeType = MimeType.Pdf,
-        onSuccess = { uri ->
-            component.savePdfTo(
-                uri = uri,
-                onResult = essentials::parseFileSaveResult
-            )
-        }
-    )
-
     val pdfToImagesPicker = rememberFilePicker(
         mimeType = MimeType.Pdf,
         onSuccess = component::setPdfToImagesUri
-    )
-
-    val pdfPreviewPicker = rememberFilePicker(
-        mimeType = MimeType.Pdf,
-        onSuccess = component::setPdfPreview
     )
 
     var tempSelectionUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -182,18 +158,6 @@ fun PdfToolsContent(
                 item {
                     PreferenceItem(
                         onClick = {
-                            component.setPdfPreview(tempSelectionUri)
-                            showSelectionPdfPicker = false
-                        },
-                        startIcon = Icons.Outlined.Preview,
-                        title = stringResource(R.string.preview_pdf),
-                        subtitle = stringResource(R.string.preview_pdf_sub),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                item {
-                    PreferenceItem(
-                        onClick = {
                             component.setPdfToImagesUri(tempSelectionUri)
                             showSelectionPdfPicker = false
                         },
@@ -238,6 +202,7 @@ fun PdfToolsContent(
                                     is Screen.PdfTools.ExtractImages -> screen.copy(uri = tempSelectionUri)
                                     is Screen.PdfTools.OCR -> screen.copy(uri = tempSelectionUri)
                                     is Screen.PdfTools.ZipConvert -> screen.copy(uri = tempSelectionUri)
+                                    is Screen.PdfTools.Preview -> screen.copy(uri = tempSelectionUri)
                                     else -> screen
                                 }
                             )
@@ -254,24 +219,10 @@ fun PdfToolsContent(
         }
     )
 
-    val imagesToPdfPicker = rememberImagePicker(onSuccess = component::setImagesToPdf)
-
-    val addImagesToPdfPicker = rememberImagePicker(onSuccess = component::addImagesToPdf)
-
     val topAppBarState = rememberTopAppBarState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
-        state = topAppBarState,
-        canScroll = { (component.pdfType !is Screen.PdfTools.Type.Preview && isPortrait) || component.pdfType == null }
+        state = topAppBarState
     )
-
-    LaunchedEffect(component.pdfType) {
-        while (component.pdfType is Screen.PdfTools.Type.Preview || (component.pdfType != null && !isPortrait)) {
-            topAppBarState.apply {
-                heightOffset = (heightOffset - 10).coerceAtLeast(heightOffsetLimit)
-            }
-            delay(10)
-        }
-    }
 
     Surface(
         modifier = Modifier
@@ -344,173 +295,112 @@ fun PdfToolsContent(
             },
             onPickContent = {
                 when (it) {
-                    is Screen.PdfTools.Type.ImagesToPdf -> imagesToPdfPicker.pickImage()
                     is Screen.PdfTools.Type.PdfToImages -> pdfToImagesPicker.pickFile()
-                    is Screen.PdfTools.Type.Preview -> pdfPreviewPicker.pickFile()
                 }
             },
             onSelectPdf = selectionPdfPicker::pickFile,
             buttons = { pdfType ->
-                val isPreview = pdfType !is Screen.PdfTools.Type.Preview
-
                 EnhancedFloatingActionButton(
                     onClick = {
                         when (pdfType) {
-                            is Screen.PdfTools.Type.ImagesToPdf -> imagesToPdfPicker.pickImage()
-                            is Screen.PdfTools.Type.Preview -> pdfPreviewPicker.pickFile()
                             else -> pdfToImagesPicker.pickFile()
                         }
                     },
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    type = if (isPreview) {
-                        if (isPortrait) EnhancedFloatingActionButtonType.SecondaryHorizontal
-                        else EnhancedFloatingActionButtonType.SecondaryVertical
-                    } else {
-                        EnhancedFloatingActionButtonType.Primary
-                    }
+                    type = if (isPortrait) EnhancedFloatingActionButtonType.SecondaryHorizontal
+                    else EnhancedFloatingActionButtonType.SecondaryVertical
                 ) {
                     Icon(
                         imageVector = when (pdfType) {
-                            is Screen.PdfTools.Type.ImagesToPdf -> Icons.Rounded.AddPhotoAlt
                             else -> Icons.Rounded.FileOpen
                         },
                         contentDescription = stringResource(R.string.pick)
                     )
                 }
-                if (isPreview) {
-                    val visible by rememberCanSaveOrShare(
-                        selectedPages = component.pdfToImageState?.selectedPages,
-                        pdfType = pdfType
-                    )
+                val visible by rememberCanSaveOrShare(
+                    selectedPages = component.pdfToImageState?.selectedPages,
+                    pdfType = pdfType
+                )
 
-                    if (visible) {
-                        if (isPortrait) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                        } else {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = visible,
-                        enter = fadeIn() + scaleIn() + expandIn(),
-                        exit = fadeOut() + scaleOut() + shrinkOut()
-                    ) {
-                        val savePdfToImages: (oneTimeSaveLocationUri: String?) -> Unit = {
-                            component.savePdfToImages(
-                                oneTimeSaveLocationUri = it,
-                                onComplete = essentials::parseSaveResults
-                            )
-                        }
-                        var showFolderSelectionDialog by rememberSaveable {
-                            mutableStateOf(false)
-                        }
-                        EnhancedFloatingActionButton(
-                            onClick = {
-                                if (pdfType is Screen.PdfTools.Type.ImagesToPdf && component.imagesToPdfState != null) {
-                                    component.convertImagesToPdf {
-                                        savePdfLauncher.make(component.generatePdfFilename())
-                                    }
-                                } else if (pdfType is Screen.PdfTools.Type.PdfToImages) {
-                                    savePdfToImages(null)
-                                }
-                            },
-                            onLongClick = if (pdfType is Screen.PdfTools.Type.PdfToImages) {
-                                { showFolderSelectionDialog = true }
-                            } else null
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Save,
-                                contentDescription = stringResource(R.string.save)
-                            )
-                        }
-                        OneTimeSaveLocationSelectionDialog(
-                            visible = showFolderSelectionDialog,
-                            onDismiss = { showFolderSelectionDialog = false },
-                            onSaveRequest = savePdfToImages
-                        )
+                if (visible) {
+                    if (isPortrait) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                    } else {
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
+
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn() + scaleIn() + expandIn(),
+                    exit = fadeOut() + scaleOut() + shrinkOut()
+                ) {
+                    val savePdfToImages: (oneTimeSaveLocationUri: String?) -> Unit = {
+                        component.savePdfToImages(
+                            oneTimeSaveLocationUri = it,
+                            onComplete = essentials::parseSaveResults
+                        )
+                    }
+                    var showFolderSelectionDialog by rememberSaveable {
+                        mutableStateOf(false)
+                    }
+                    EnhancedFloatingActionButton(
+                        onClick = {
+                            savePdfToImages(null)
+                        },
+                        onLongClick = if (pdfType is Screen.PdfTools.Type.PdfToImages) {
+                            { showFolderSelectionDialog = true }
+                        } else null
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Save,
+                            contentDescription = stringResource(R.string.save)
+                        )
+                    }
+                    OneTimeSaveLocationSelectionDialog(
+                        visible = showFolderSelectionDialog,
+                        onDismiss = { showFolderSelectionDialog = false },
+                        onSaveRequest = savePdfToImages
+                    )
+                }
             },
-            controls = { pdfType ->
-                if (pdfType is Screen.PdfTools.Type.ImagesToPdf) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        ImageReorderCarousel(
-                            images = component.imagesToPdfState,
-                            onReorder = component::reorderImagesToPdf,
-                            onNeedToAddImage = { addImagesToPdfPicker.pickImage() },
-                            onNeedToRemoveImageAt = component::removeImageToPdfAt,
-                            onNavigate = component.onNavigate
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        PresetSelector(
-                            value = component.presetSelected,
-                            includeTelegramOption = false,
-                            onValueChange = {
-                                if (it is Preset.Percentage) {
-                                    component.selectPreset(it)
-                                }
-                            },
-                            showWarning = component.showOOMWarning
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        QualitySelector(
-                            imageFormat = ImageFormat.Jpg,
-                            quality = Quality.Base(component.quality),
-                            onQualityChange = {
-                                component.setQuality(it.qualityValue)
-                            },
-                            autoCoerce = false
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        ScaleSmallImagesToLargeToggle(
-                            checked = component.scaleSmallImagesToLarge,
-                            onCheckedChange = {
-                                component.toggleScaleSmallImagesToLarge()
+            controls = {
+                Column(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    PageSelectionItem(
+                        value = component.pdfToImageState?.selectedPages,
+                        onValueChange = component::updatePdfToImageSelection,
+                        pagesCount = component.pdfToImageState?.pagesCount ?: 0
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    PresetSelector(
+                        value = component.presetSelected,
+                        includeTelegramOption = false,
+                        onValueChange = {
+                            if (it is Preset.Percentage) {
+                                component.selectPreset(it)
                             }
-                        )
-                    }
-                } else if (pdfType is Screen.PdfTools.Type.PdfToImages) {
-                    Column(
-                        modifier = Modifier
-                            .padding(20.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        PageSelectionItem(
-                            value = component.pdfToImageState?.selectedPages,
-                            onValueChange = component::updatePdfToImageSelection,
-                            pagesCount = component.pdfToImageState?.pagesCount ?: 0
-                        )
+                        },
+                        showWarning = component.showOOMWarning
+                    )
+                    if (component.imageInfo.imageFormat.canChangeCompressionValue) {
                         Spacer(Modifier.height(8.dp))
-                        PresetSelector(
-                            value = component.presetSelected,
-                            includeTelegramOption = false,
-                            onValueChange = {
-                                if (it is Preset.Percentage) {
-                                    component.selectPreset(it)
-                                }
-                            },
-                            showWarning = component.showOOMWarning
-                        )
-                        if (component.imageInfo.imageFormat.canChangeCompressionValue) {
-                            Spacer(Modifier.height(8.dp))
-                        }
-                        QualitySelector(
-                            imageFormat = component.imageInfo.imageFormat,
-                            quality = component.imageInfo.quality,
-                            onQualityChange = component::setQuality
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        ImageFormatSelector(
-                            value = component.imageInfo.imageFormat,
-                            onValueChange = component::updateImageFormat,
-                            quality = component.imageInfo.quality,
-                        )
                     }
+                    QualitySelector(
+                        imageFormat = component.imageInfo.imageFormat,
+                        quality = component.imageInfo.quality,
+                        onQualityChange = component::setQuality
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    ImageFormatSelector(
+                        value = component.imageInfo.imageFormat,
+                        onValueChange = component::updateImageFormat,
+                        quality = component.imageInfo.quality,
+                    )
                 }
             }
         )

@@ -2181,4 +2181,6 @@
     <string name="orientation">Orientering</string>
     <string name="page_size">Sidstorlek</string>
     <string name="margin">Marginal</string>
+    <string name="bloom">Blomma</string>
+    <string name="model_realesr_animevideo_v3x4">Optimerad för anime och tecknade serier. Snabb uppskalning med förbättrade naturliga färger och färre artefakter</string>
 </resources>

@@ -84,10 +84,8 @@ internal fun List<Uri>.screenList(
     val pdfAvailableScreens by remember(uris) {
         derivedStateOf {
             listOf(
-                Screen.PdfTools(
-                    Screen.PdfTools.Type.Preview(
-                        uris.firstOrNull()
-                    )
+                Screen.PdfTools.Preview(
+                    uris.firstOrNull()
                 ),
                 Screen.PdfTools(
                     Screen.PdfTools.Type.PdfToImages(
@@ -145,9 +143,7 @@ internal fun List<Uri>.screenList(
                 Screen.ImageCutter(uris),
                 Screen.ScanQrCode(uriToAnalyze = uris.firstOrNull()),
                 Screen.GradientMaker(uris),
-                Screen.PdfTools(
-                    Screen.PdfTools.Type.ImagesToPdf(uris)
-                ),
+                Screen.PdfTools.ImagesToPdf(uris),
                 Screen.GifTools(
                     Screen.GifTools.Type.ImageToGif(uris)
                 ),
@@ -204,7 +200,7 @@ internal fun List<Uri>.screenList(
                 ),
             ).apply {
                 add(Screen.ImageStitching(uris))
-                add(Screen.PdfTools(Screen.PdfTools.Type.ImagesToPdf(uris)))
+                add(Screen.PdfTools.ImagesToPdf(uris))
                 if (uris.size == 2) add(Screen.Compare(uris))
                 if (uris.size in 1..10) {
                     add(Screen.CollageMaker(uris))

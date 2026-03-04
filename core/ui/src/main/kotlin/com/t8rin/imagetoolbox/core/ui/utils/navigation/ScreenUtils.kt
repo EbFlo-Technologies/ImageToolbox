@@ -44,6 +44,7 @@ import androidx.compose.material.icons.twotone.FolderZip
 import androidx.compose.material.icons.twotone.GifBox
 import androidx.compose.material.icons.twotone.Gradient
 import androidx.compose.material.icons.twotone.Panorama
+import androidx.compose.material.icons.twotone.Preview
 import androidx.compose.material.icons.twotone.Print
 import androidx.compose.material.icons.twotone.QrCode
 import androidx.compose.material.icons.twotone.Tag
@@ -84,7 +85,9 @@ import com.t8rin.imagetoolbox.core.resources.icons.Neurology
 import com.t8rin.imagetoolbox.core.resources.icons.NoiseAlt
 import com.t8rin.imagetoolbox.core.resources.icons.PaletteSwatch
 import com.t8rin.imagetoolbox.core.resources.icons.Pdf
+import com.t8rin.imagetoolbox.core.resources.icons.Preview
 import com.t8rin.imagetoolbox.core.resources.icons.Rotate90Cw
+import com.t8rin.imagetoolbox.core.resources.icons.Scanner
 import com.t8rin.imagetoolbox.core.resources.icons.ScissorsSmall
 import com.t8rin.imagetoolbox.core.resources.icons.ServiceToolbox
 import com.t8rin.imagetoolbox.core.resources.icons.ShieldLock
@@ -233,6 +236,8 @@ internal fun Screen.simpleName(): String = when (this) {
     is PdfTools.ExtractImages -> "PdfTools_ExtractImages"
     is PdfTools.ZipConvert -> "PdfTools_ZipConvert"
     is PdfTools.Print -> "PdfTools_Print"
+    is PdfTools.Preview -> "PdfTools_Preview"
+    is PdfTools.ImagesToPdf -> "PdfTools_ImagesToPdf"
 }
 
 internal fun Screen.icon(): ImageVector? = when (this) {
@@ -307,6 +312,8 @@ internal fun Screen.icon(): ImageVector? = when (this) {
     is PdfTools.ExtractImages -> Icons.Outlined.Unarchive
     is PdfTools.ZipConvert -> Icons.Outlined.FolderZip
     is PdfTools.Print -> Icons.Outlined.Print
+    is PdfTools.Preview -> Icons.Outlined.Preview
+    is PdfTools.ImagesToPdf -> Icons.Outlined.Scanner
 }
 
 internal fun Screen.twoToneIcon(): ImageVector? = when (this) {
@@ -381,6 +388,8 @@ internal fun Screen.twoToneIcon(): ImageVector? = when (this) {
     is PdfTools.ExtractImages -> Icons.TwoTone.Unarchive
     is PdfTools.ZipConvert -> Icons.TwoTone.FolderZip
     is PdfTools.Print -> Icons.TwoTone.Print
+    is PdfTools.Preview -> Icons.TwoTone.Preview
+    is PdfTools.ImagesToPdf -> Icons.TwoTone.Scanner
 }
 
 internal object UriSerializer : KSerializer<AndroidUri> {
@@ -493,5 +502,5 @@ private object ScreenConstantsImpl : ScreenConstants {
             .sortedBy { it.id }
     }
 
-    override val FEATURES_COUNT = 83 + PdfTools.options.size
+    override val FEATURES_COUNT = 81 + PdfTools.options.size
 }
