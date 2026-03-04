@@ -20,11 +20,10 @@ plugins {
     alias(libs.plugins.image.toolbox.feature)
     alias(libs.plugins.image.toolbox.hilt)
     alias(libs.plugins.image.toolbox.compose)
-    kotlin("plugin.serialization")
 }
 
 android.namespace = "com.t8rin.imagetoolbox.feature.markup_layers"
 
 dependencies {
-    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.moshi)
 }

@@ -55,7 +55,9 @@ fun UiMarkupLayer.asDomain(): MarkupLayer = MarkupLayer(
         offsetY = state.offset.y,
         alpha = state.alpha,
         currentCanvasSize = state.canvasSize,
-        coerceToBounds = state.coerceToBounds
+        coerceToBounds = state.coerceToBounds,
+        isActive = state.isActive,   // Pass from UI to Domain
+        isVisible = state.isVisible  // Pass from UI to Domain
     )
 )
 
@@ -68,7 +70,9 @@ fun MarkupLayer.asUi(): UiMarkupLayer = UiMarkupLayer(
             x = position.offsetX,
             y = position.offsetY
         ),
-        isActive = false,
+        alpha = position.alpha,       // Mapped alpha
+        isActive = position.isActive, // Pass from Domain to UI
+        isVisible = position.isVisible, // Pass from Domain to UI
         canvasSize = position.currentCanvasSize,
         coerceToBounds = position.coerceToBounds
     )

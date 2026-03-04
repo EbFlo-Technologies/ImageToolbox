@@ -1,29 +1,46 @@
-package com.t8rin.imagetoolbox.feature.markup_layers.domain.model
+package com.t8rin.imagetoolbox.feature.markup_layers.data.model
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Offset
 import com.t8rin.imagetoolbox.core.domain.model.IntegerSize
 import com.t8rin.imagetoolbox.core.domain.model.Outline
 import com.t8rin.imagetoolbox.core.settings.domain.model.DomainFontFamily
+import com.t8rin.imagetoolbox.core.settings.presentation.model.asDomain
 import com.t8rin.imagetoolbox.core.settings.presentation.model.asFontType
-import com.t8rin.imagetoolbox.core.settings.presentation.model.toUiFont
+import com.t8rin.imagetoolbox.feature.markup_layers.domain.LayerPosition
 import com.t8rin.imagetoolbox.feature.markup_layers.domain.LayerType
-import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.EditBoxState
-import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.model.UiMarkupLayer
-import kotlinx.serialization.Serializable
+import com.t8rin.imagetoolbox.feature.markup_layers.domain.MarkupLayer
+import com.squareup.moshi.JsonClass
 
 /**
  * Data Transfer Objects (DTOs) for serializing the Markup Layer state to JSON.
  * These classes mirror the in-memory state but use only primitive, serializable types.
  */
 
-@Serializable
+@JsonClass(generateAdapter = true)
 data class MarkupProjectDto(
     val version: Int = 1,
+    val background: BackgroundBehaviorDto = BackgroundBehaviorDto.None,
     val layers: List<MarkupLayerDto>
 )
 
-@Serializable
+@JsonClass(generateAdapter = true)
+sealed interface BackgroundBehaviorDto {
+    @JsonClass(generateAdapter = true)
+    data object None : BackgroundBehaviorDto
+
+    @JsonClass(generateAdapter = true)
+    data class Color(
+        val width: Int,
+        val height: Int,
+        val color: Int
+    ) : BackgroundBehaviorDto
+
+    @JsonClass(generateAdapter = true)
+    data class Image(
+        val assetName: String
+    ) : BackgroundBehaviorDto
+}
+
+@JsonClass(generateAdapter = true)
 data class MarkupLayerDto(
     val type: LayerTypeDto,
     val position: LayerPositionDto,
@@ -32,7 +49,7 @@ data class MarkupLayerDto(
     val coerceToBounds: Boolean
 )
 
-@Serializable
+@JsonClass(generateAdapter = true)
 data class LayerPositionDto(
     val scale: Float,
     val rotation: Float,
@@ -43,10 +60,10 @@ data class LayerPositionDto(
     val canvasHeight: Int
 )
 
-@Serializable
+@JsonClass(generateAdapter = true)
 sealed interface LayerTypeDto {
 
-    @Serializable
+    @JsonClass(generateAdapter = true)
     data class Text(
         val color: Int,
         val size: Float,
@@ -59,43 +76,40 @@ sealed interface LayerTypeDto {
         val outlineWidth: Float?
     ) : LayerTypeDto
 
-    @Serializable
+    @JsonClass(generateAdapter = true)
     data class Image(
         val assetName: String // e.g., "assets/layer_2_image.png" inside the zip
     ) : LayerTypeDto
 
-    @Serializable
+    @JsonClass(generateAdapter = true)
     data class Sticker(
         val emojiString: String // Or however stickers are defined
     ) : LayerTypeDto
 }
 
 // --- MAPPING FUNCTIONS ---
-
-@Composable
-fun UiMarkupLayer.toDto(assetName: String? = null): MarkupLayerDto = MarkupLayerDto(
+fun MarkupLayer.toDto(assetName: String? = null): MarkupLayerDto = MarkupLayerDto(
     type = type.toDto(assetName),
     position = LayerPositionDto(
-        scale = state.scale,
-        rotation = state.rotation,
-        offsetX = state.offset.x,
-        offsetY = state.offset.y,
-        alpha = state.alpha,
-        canvasWidth = state.canvasSize.width,
-        canvasHeight = state.canvasSize.height
+        scale = position.scale,
+        rotation = position.rotation,
+        offsetX = position.offsetX,
+        offsetY = position.offsetY,
+        alpha = position.alpha,
+        canvasWidth = position.currentCanvasSize.width,
+        canvasHeight = position.currentCanvasSize.height
     ),
-    isActive = state.isActive,
-    isVisible = state.isVisible,
-    coerceToBounds = state.coerceToBounds
+    isActive = position.isActive,       // Safely retrieved from Domain
+    isVisible = position.isVisible,     // Safely retrieved from Domain
+    coerceToBounds = position.coerceToBounds
 )
 
-@Composable
 fun LayerType.toDto(assetName: String? = null): LayerTypeDto = when (this) {
     is LayerType.Text -> LayerTypeDto.Text(
         color = color,
         size = size,
         fontPath = font?.let {
-            val domainFont = it.toUiFont().asDomain()
+            val domainFont = it.asDomain()
             if (domainFont !is DomainFontFamily.Custom) domainFont.asString() else null
         },
         backgroundColor = backgroundColor,
@@ -113,17 +127,18 @@ fun LayerType.toDto(assetName: String? = null): LayerTypeDto = when (this) {
     )
 }
 
-fun MarkupLayerDto.toUiLayer(imageData: Any? = null): UiMarkupLayer = UiMarkupLayer(
+fun MarkupLayerDto.toDomainLayer(imageData: Any? = null): MarkupLayer = MarkupLayer(
     type = type.toDomain(imageData),
-    state = EditBoxState(
+    position = LayerPosition(
         scale = position.scale,
         rotation = position.rotation,
-        offset = Offset(position.offsetX, position.offsetY),
+        offsetX = position.offsetX,
+        offsetY = position.offsetY,
         alpha = position.alpha,
-        isActive = isActive,
-        isVisible = isVisible,
-        canvasSize = IntegerSize(position.canvasWidth, position.canvasHeight),
-        coerceToBounds = coerceToBounds
+        currentCanvasSize = IntegerSize(position.canvasWidth, position.canvasHeight),
+        coerceToBounds = coerceToBounds,
+        isActive = isActive,            // Restored from DTO
+        isVisible = isVisible           // Restored from DTO
     )
 )
 
