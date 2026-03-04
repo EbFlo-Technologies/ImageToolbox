@@ -15,30 +15,24 @@ import com.squareup.moshi.JsonClass
  * These classes mirror the in-memory state but use only primitive, serializable types.
  */
 
+enum class BackgroundDtoType { NONE, COLOR, IMAGE }
+enum class LayerDtoType { TEXT, IMAGE, STICKER }
+
 @JsonClass(generateAdapter = true)
 data class MarkupProjectDto(
     val version: Int = 1,
-    val background: BackgroundBehaviorDto = BackgroundBehaviorDto.None,
+    val background: BackgroundBehaviorDto = BackgroundBehaviorDto(type = BackgroundDtoType.NONE),
     val layers: List<MarkupLayerDto>
 )
 
 @JsonClass(generateAdapter = true)
-sealed interface BackgroundBehaviorDto {
-    @JsonClass(generateAdapter = true)
-    data object None : BackgroundBehaviorDto
-
-    @JsonClass(generateAdapter = true)
-    data class Color(
-        val width: Int,
-        val height: Int,
-        val color: Int
-    ) : BackgroundBehaviorDto
-
-    @JsonClass(generateAdapter = true)
-    data class Image(
-        val assetName: String
-    ) : BackgroundBehaviorDto
-}
+data class BackgroundBehaviorDto(
+    val type: BackgroundDtoType,
+    val width: Int? = null,
+    val height: Int? = null,
+    val color: Int? = null,
+    val assetName: String? = null
+)
 
 @JsonClass(generateAdapter = true)
 data class MarkupLayerDto(
@@ -61,31 +55,20 @@ data class LayerPositionDto(
 )
 
 @JsonClass(generateAdapter = true)
-sealed interface LayerTypeDto {
-
-    @JsonClass(generateAdapter = true)
-    data class Text(
-        val color: Int,
-        val size: Float,
-        val fontPath: String?, // Path or identifier for the font
-        val backgroundColor: Int,
-        val text: String,
-        val decorations: List<String>, // "Bold", "Italic", etc.
-        val alignment: String, // "Start", "Center", "End"
-        val outlineColor: Int?,
-        val outlineWidth: Float?
-    ) : LayerTypeDto
-
-    @JsonClass(generateAdapter = true)
-    data class Image(
-        val assetName: String // e.g., "assets/layer_2_image.png" inside the zip
-    ) : LayerTypeDto
-
-    @JsonClass(generateAdapter = true)
-    data class Sticker(
-        val emojiString: String // Or however stickers are defined
-    ) : LayerTypeDto
-}
+data class LayerTypeDto(
+    val type: LayerDtoType,
+    val color: Int? = null,
+    val size: Float? = null,
+    val fontPath: String? = null,
+    val backgroundColor: Int? = null,
+    val text: String? = null,
+    val decorations: List<String>? = null,
+    val alignment: String? = null,
+    val outlineColor: Int? = null,
+    val outlineWidth: Float? = null,
+    val assetName: String? = null,
+    val emojiString: String? = null
+)
 
 // --- MAPPING FUNCTIONS ---
 fun MarkupLayer.toDto(assetName: String? = null): MarkupLayerDto = MarkupLayerDto(
@@ -99,13 +82,14 @@ fun MarkupLayer.toDto(assetName: String? = null): MarkupLayerDto = MarkupLayerDt
         canvasWidth = position.currentCanvasSize.width,
         canvasHeight = position.currentCanvasSize.height
     ),
-    isActive = position.isActive,       // Safely retrieved from Domain
-    isVisible = position.isVisible,     // Safely retrieved from Domain
+    isActive = position.isActive,
+    isVisible = position.isVisible,
     coerceToBounds = position.coerceToBounds
 )
 
 fun LayerType.toDto(assetName: String? = null): LayerTypeDto = when (this) {
-    is LayerType.Text -> LayerTypeDto.Text(
+    is LayerType.Text -> LayerTypeDto(
+        type = LayerDtoType.TEXT,
         color = color,
         size = size,
         fontPath = font?.let {
@@ -119,10 +103,12 @@ fun LayerType.toDto(assetName: String? = null): LayerTypeDto = when (this) {
         outlineColor = outline?.color,
         outlineWidth = outline?.width
     )
-    is LayerType.Picture.Image -> LayerTypeDto.Image(
+    is LayerType.Picture.Image -> LayerTypeDto(
+        type = LayerDtoType.IMAGE,
         assetName = assetName ?: ""
     )
-    is LayerType.Picture.Sticker -> LayerTypeDto.Sticker(
+    is LayerType.Picture.Sticker -> LayerTypeDto(
+        type = LayerDtoType.STICKER,
         emojiString = imageData.toString()
     )
 }
@@ -137,31 +123,30 @@ fun MarkupLayerDto.toDomainLayer(imageData: Any? = null): MarkupLayer = MarkupLa
         alpha = position.alpha,
         currentCanvasSize = IntegerSize(position.canvasWidth, position.canvasHeight),
         coerceToBounds = coerceToBounds,
-        isActive = isActive,            // Restored from DTO
-        isVisible = isVisible           // Restored from DTO
+        isActive = isActive,
+        isVisible = isVisible
     )
 )
 
-fun LayerTypeDto.toDomain(imageData: Any? = null): LayerType = when (this) {
-    is LayerTypeDto.Text -> LayerType.Text(
-        color = color,
-        size = size,
+fun LayerTypeDto.toDomain(imageData: Any? = null): LayerType = when (type) {
+    LayerDtoType.TEXT -> LayerType.Text(
+        color = color ?: 0,
+        size = size ?: 0.2f,
         font = fontPath?.let { DomainFontFamily.fromString(it).asFontType() },
-        backgroundColor = backgroundColor,
-        text = text,
-        decorations = decorations.mapNotNull {
+        backgroundColor = backgroundColor ?: 0,
+        text = text ?: "",
+        decorations = decorations?.mapNotNull {
             runCatching { LayerType.Text.Decoration.valueOf(it) }.getOrNull()
-        },
-        alignment = runCatching { LayerType.Text.Alignment.valueOf(alignment) }
-            .getOrDefault(LayerType.Text.Alignment.Center),
+        } ?: emptyList(),
+        alignment = alignment?.let { runCatching { LayerType.Text.Alignment.valueOf(it) }.getOrDefault(LayerType.Text.Alignment.Center) } ?: LayerType.Text.Alignment.Center,
         outline = if (outlineColor != null && outlineWidth != null) {
             Outline(color = outlineColor, width = outlineWidth)
         } else null
     )
-    is LayerTypeDto.Image -> LayerType.Picture.Image(
-        imageData = imageData ?: assetName
+    LayerDtoType.IMAGE -> LayerType.Picture.Image(
+        imageData = imageData ?: assetName ?: ""
     )
-    is LayerTypeDto.Sticker -> LayerType.Picture.Sticker(
-        imageData = emojiString
+    LayerDtoType.STICKER -> LayerType.Picture.Sticker(
+        imageData = emojiString ?: ""
     )
 }

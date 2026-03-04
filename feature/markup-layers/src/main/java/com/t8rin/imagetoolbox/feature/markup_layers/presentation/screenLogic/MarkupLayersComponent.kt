@@ -48,9 +48,12 @@ import com.t8rin.imagetoolbox.core.ui.utils.helper.ImageUtils.toSoftware
 import com.t8rin.imagetoolbox.core.ui.utils.navigation.Screen
 import com.t8rin.imagetoolbox.core.ui.utils.state.update
 import com.t8rin.imagetoolbox.feature.markup_layers.domain.MarkupLayersApplier
+import com.t8rin.imagetoolbox.feature.markup_layers.domain.MarkupProjectManager
+import com.t8rin.imagetoolbox.feature.markup_layers.domain.model.DomainBackgroundBehavior
 import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.model.BackgroundBehavior
 import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.model.UiMarkupLayer
 import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.model.asDomain
+import com.t8rin.imagetoolbox.feature.markup_layers.presentation.components.model.asUi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -75,7 +78,8 @@ class MarkupLayersComponent @AssistedInject internal constructor(
     private val imageGetter: ImageGetter<Bitmap>,
     private val imageScaler: ImageScaler<Bitmap>,
     private val shareProvider: ImageShareProvider<Bitmap>,
-    private val markupLayersApplier: MarkupLayersApplier<Bitmap>
+    private val markupLayersApplier: MarkupLayersApplier<Bitmap>,
+    private val projectManager: MarkupProjectManager
 ) : BaseComponent(dispatchersHolder, componentContext) {
 
     init {
@@ -440,6 +444,88 @@ class MarkupLayersComponent @AssistedInject internal constructor(
             onGoBack: () -> Unit,
             onNavigate: (Screen) -> Unit,
         ): MarkupLayersComponent
+    }
+
+    fun saveProject(uri: Uri, onResult: (Result<Unit>) -> Unit) {
+        savingJob = trackProgress {
+            _isSaving.value = true
+
+            // 1. Map UI Layers -> Domain Layers
+            val domainLayers = layers.map { it.asDomain() }
+
+            // 2. Map UI Background -> Domain Background
+            val domainBackground = when (val bg = backgroundBehavior) {
+                is BackgroundBehavior.None -> DomainBackgroundBehavior.None
+                is BackgroundBehavior.Image -> DomainBackgroundBehavior.Image
+                is BackgroundBehavior.Color -> DomainBackgroundBehavior.Color(
+                    width = bg.width,
+                    height = bg.height,
+                    color = bg.color
+                )
+            }
+
+            // 3. Pass pure Domain objects to the Manager
+            onResult(projectManager.exportProject(domainLayers, domainBackground, _uri.value, uri))
+            _isSaving.value = false
+        }
+    }
+
+    fun loadProject(uri: Uri, onResult: (Result<Unit>) -> Unit) {
+        savingJob = trackProgress {
+            _isSaving.value = true
+            val result = projectManager.importProject(uri)
+            result.onSuccess { imported ->
+
+                // Helper function to safely apply layers
+                val applyLayers = {
+                    _layers.update { imported.layers.map { it.asUi() } }
+                    registerChanges()
+                }
+
+                // 2. Map Domain Background -> UI Background and Restore
+                when (val bg = imported.backgroundBehavior) {
+                    is DomainBackgroundBehavior.Color -> {
+                        _uri.value = Uri.EMPTY
+                        _bitmap.value = null
+                        _backgroundBehavior.update {
+                            BackgroundBehavior.Color(
+                                width = bg.width,
+                                height = bg.height,
+                                color = bg.color
+                            )
+                        }
+                        applyLayers()
+                    }
+                    is DomainBackgroundBehavior.Image -> {
+                        _backgroundBehavior.update { BackgroundBehavior.Image }
+                        _uri.value = imported.backgroundUri
+
+                        // Fetch the background image manually to avoid wiping out layers
+                        componentScope.launch {
+                            _isImageLoading.value = true
+                            imageGetter.getImageAsync(
+                                uri = imported.backgroundUri.toString(),
+                                originalSize = true,
+                                onGetImage = { data ->
+                                    updateBitmap(data.image)
+                                    _imageFormat.update { data.imageInfo.imageFormat }
+                                    applyLayers() // Apply layers ONLY AFTER background is ready
+                                },
+                                onFailure = {
+                                    applyLayers() // Still apply layers even if background fails to load
+                                }
+                            )
+                        }
+                    }
+                    is DomainBackgroundBehavior.None -> {
+                        _backgroundBehavior.update { BackgroundBehavior.None }
+                        applyLayers()
+                    }
+                }
+            }
+            _isSaving.value = false
+            onResult(result.map {})
+        }
     }
 
 }

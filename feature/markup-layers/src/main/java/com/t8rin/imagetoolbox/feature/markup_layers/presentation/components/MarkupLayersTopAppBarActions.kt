@@ -19,6 +19,8 @@ package com.t8rin.imagetoolbox.feature.markup_layers.presentation.components
 
 import android.net.Uri
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.BottomSheetScaffoldState
 import androidx.compose.material3.Icon
@@ -43,15 +45,37 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun MarkupLayersTopAppBarActions(
     component: MarkupLayersComponent,
-    scaffoldState: BottomSheetScaffoldState
+    scaffoldState: BottomSheetScaffoldState,
+    onSaveProjectClick: () -> Unit,
+    onLoadProjectClick: () -> Unit
 ) {
     val isPortrait by isPortraitOrientationAsState()
 
     val essentials = rememberLocalEssentials()
     val showConfetti: () -> Unit = essentials::showConfetti
 
-    if (component.backgroundBehavior == BackgroundBehavior.None) TopAppBarEmoji()
-    else {
+    if (component.backgroundBehavior == BackgroundBehavior.None) {
+        TopAppBarEmoji()
+    } else {
+        EnhancedIconButton(
+            onClick = onLoadProjectClick
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.FolderOpen,
+                contentDescription = "Load Project"
+            )
+        }
+
+        EnhancedIconButton(
+            onClick = onSaveProjectClick,
+            enabled = component.layers.isNotEmpty()
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Save,
+                contentDescription = "Save Project"
+            )
+        }
+
         if (isPortrait) {
             EnhancedIconButton(
                 onClick = {

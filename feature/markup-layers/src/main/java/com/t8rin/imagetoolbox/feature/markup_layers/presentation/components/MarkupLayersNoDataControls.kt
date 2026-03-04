@@ -36,6 +36,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FormatPaint
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,7 +76,8 @@ import com.t8rin.imagetoolbox.feature.markup_layers.presentation.screenLogic.Mar
 @Composable
 internal fun MarkupLayersNoDataControls(
     component: MarkupLayersComponent,
-    onPickImage: () -> Unit
+    onPickImage: () -> Unit,
+    onLoadProjectClick: () -> Unit
 ) {
     var showBackgroundDrawingSetup by rememberSaveable { mutableStateOf(false) }
 
@@ -118,6 +120,15 @@ internal fun MarkupLayersNoDataControls(
                 startIcon = Icons.Outlined.FormatPaint,
                 title = stringResource(R.string.layers_on_background),
                 subtitle = stringResource(R.string.layers_on_background_sub),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            PreferenceItem(
+                onClick = onLoadProjectClick,
+                startIcon = Icons.Rounded.FolderOpen,
+                title = "Open Project",
+                subtitle = "Load an .itp workspace file",
                 modifier = Modifier.fillMaxWidth()
             )
         }

@@ -23,8 +23,10 @@ import android.net.Uri
 import androidx.core.net.toUri
 import com.t8rin.imagetoolbox.core.domain.coroutines.DispatchersHolder
 import com.t8rin.imagetoolbox.core.domain.image.ImageGetter
+import com.t8rin.imagetoolbox.core.domain.json.JsonParser
 import com.t8rin.imagetoolbox.feature.markup_layers.data.model.BackgroundBehaviorDto
-import com.t8rin.imagetoolbox.feature.markup_layers.data.model.LayerTypeDto
+import com.t8rin.imagetoolbox.feature.markup_layers.data.model.BackgroundDtoType
+import com.t8rin.imagetoolbox.feature.markup_layers.data.model.LayerDtoType
 import com.t8rin.imagetoolbox.feature.markup_layers.data.model.MarkupProjectDto
 import com.t8rin.imagetoolbox.feature.markup_layers.data.model.toDomainLayer
 import com.t8rin.imagetoolbox.feature.markup_layers.data.model.toDto
@@ -35,7 +37,6 @@ import com.t8rin.imagetoolbox.feature.markup_layers.domain.MarkupProjectManager
 import com.t8rin.imagetoolbox.feature.markup_layers.domain.model.DomainBackgroundBehavior
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.withContext
-import com.t8rin.imagetoolbox.core.domain.json.JsonParser
 import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -50,8 +51,8 @@ internal class AndroidMarkupProjectManager @Inject constructor(
 ) : MarkupProjectManager, DispatchersHolder by dispatchersHolder {
 
     override suspend fun exportProject(
-        layers: List<MarkupLayer>, // Changed from UiMarkupLayer
-        backgroundBehavior: DomainBackgroundBehavior, // Changed from UI BackgroundBehavior
+        layers: List<MarkupLayer>,
+        backgroundBehavior: DomainBackgroundBehavior,
         backgroundUri: Uri,
         destinationUri: Uri
     ): Result<Unit> = withContext(ioDispatcher) {
@@ -76,13 +77,44 @@ internal class AndroidMarkupProjectManager @Inject constructor(
                 }
             }
 
-            val projectDto = MarkupProjectDto(version = 1, layers = dtos)
+            // 2. Map Background to DTO and extract its bitmap if it's an image
+            val backgroundDto = when (backgroundBehavior) {
+                is DomainBackgroundBehavior.None -> BackgroundBehaviorDto(type = BackgroundDtoType.NONE)
+                is DomainBackgroundBehavior.Color -> BackgroundBehaviorDto(
+                    type = BackgroundDtoType.COLOR,
+                    width = backgroundBehavior.width,
+                    height = backgroundBehavior.height,
+                    color = backgroundBehavior.color
+                )
+                is DomainBackgroundBehavior.Image -> {
+                    val bgAssetName = "assets/background.png"
+
+                    // Grab the background image bitmap from memory/URI
+                    val bgBitmap = imageGetter.getImage(backgroundUri.toString())
+                    if (bgBitmap != null) {
+                        assets[bgAssetName] = bgBitmap.image
+                    }
+
+                    BackgroundBehaviorDto(
+                        type = BackgroundDtoType.IMAGE,
+                        assetName = bgAssetName
+                    )
+                }
+            }
+
+            // 3. Create the Project DTO WITH the background!
+            val projectDto = MarkupProjectDto(
+                version = 1,
+                background = backgroundDto, // <-- This is the missing piece!
+                layers = dtos
+            )
+
             val jsonString = jsonParser.toJson(
                 obj = projectDto,
                 type = MarkupProjectDto::class.java
             ) ?: throw IllegalStateException("Failed to serialize project to JSON")
 
-            // 2. Open the destination file and start zipping
+            // 4. Open the destination file and start zipping
             context.contentResolver.openOutputStream(destinationUri)?.use { outputStream ->
                 ZipOutputStream(outputStream).use { zipOut ->
 
@@ -141,9 +173,10 @@ internal class AndroidMarkupProjectManager @Inject constructor(
 
             // 3. Map Layers (Data DTO -> Domain Model)
             val restoredLayers = projectDto.layers.map { layerDto ->
-                if (layerDto.type is LayerTypeDto.Image) {
+                if (layerDto.type.type == LayerDtoType.IMAGE) { // Check the enum type!
                     // Reattach the unzipped file URI to the image layer
-                    val assetFile = File(projectDir, layerDto.type.assetName.removePrefix("assets/"))
+                    val assetName = layerDto.type.assetName ?: ""
+                    val assetFile = File(projectDir, assetName.removePrefix("assets/"))
                     layerDto.toDomainLayer(assetFile.toUri().toString())
                 } else {
                     layerDto.toDomainLayer(null)
@@ -154,20 +187,21 @@ internal class AndroidMarkupProjectManager @Inject constructor(
             var bgBehavior: DomainBackgroundBehavior = DomainBackgroundBehavior.None
             var bgUri = Uri.EMPTY
 
-            when (val bgDto = projectDto.background) {
-                is BackgroundBehaviorDto.None -> {
+            when (projectDto.background.type) {
+                BackgroundDtoType.NONE -> {
                     bgBehavior = DomainBackgroundBehavior.None
                 }
-                is BackgroundBehaviorDto.Color -> {
+                BackgroundDtoType.COLOR -> {
                     bgBehavior = DomainBackgroundBehavior.Color(
-                        width = bgDto.width,
-                        height = bgDto.height,
-                        color = bgDto.color
+                        width = projectDto.background.width ?: 1,
+                        height = projectDto.background.height ?: 1,
+                        color = projectDto.background.color ?: 0
                     )
                 }
-                is BackgroundBehaviorDto.Image -> {
+                BackgroundDtoType.IMAGE -> {
                     bgBehavior = DomainBackgroundBehavior.Image
-                    val assetFile = File(projectDir, bgDto.assetName.removePrefix("assets/"))
+                    val bgAssetName = projectDto.background.assetName ?: "assets/background.png"
+                    val assetFile = File(projectDir, bgAssetName.removePrefix("assets/"))
                     bgUri = assetFile.toUri()
                 }
             }

@@ -21,6 +21,8 @@ package com.t8rin.imagetoolbox.feature.markup_layers.presentation
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -182,6 +184,38 @@ fun MarkupLayersContent(
         mutableStateOf(false)
     }
 
+    // --- ITP Project Save/Load Launchers ---
+    val loadProjectLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+        onResult = { uri ->
+            uri?.let {
+                component.loadProject(it) { result ->
+                    if (result.isSuccess) {
+                        essentials.showToast("Project loaded successfully!")
+                    } else {
+                        essentials.showFailureToast(result.exceptionOrNull() ?: Throwable("Load failed"))
+                    }
+                }
+            }
+        }
+    )
+
+    val saveProjectLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
+        onResult = { uri ->
+            uri?.let {
+                component.saveProject(it) { result ->
+                    if (result.isSuccess) {
+                        essentials.showToast("Project saved successfully!")
+                        essentials.showConfetti()
+                    } else {
+                        essentials.showFailureToast(result.exceptionOrNull() ?: Throwable("Save failed"))
+                    }
+                }
+            }
+        }
+    )
+
     AdaptiveBottomScaffoldLayoutScreen(
         autoClearFocus = false,
         modifier = Modifier
@@ -225,7 +259,9 @@ fun MarkupLayersContent(
         topAppBarPersistentActions = { scaffoldState ->
             MarkupLayersTopAppBarActions(
                 component = component,
-                scaffoldState = scaffoldState
+                scaffoldState = scaffoldState,
+                onSaveProjectClick = { saveProjectLauncher.launch("project.itp") },
+                onLoadProjectClick = { loadProjectLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }
             )
         },
         mainContent = {
@@ -404,7 +440,8 @@ fun MarkupLayersContent(
         noDataControls = {
             MarkupLayersNoDataControls(
                 component = component,
-                onPickImage = pickImage
+                onPickImage = pickImage,
+                onLoadProjectClick = { loadProjectLauncher.launch(arrayOf("application/zip", "application/octet-stream")) }
             )
         },
         canShowScreenData = component.backgroundBehavior !is BackgroundBehavior.None,
