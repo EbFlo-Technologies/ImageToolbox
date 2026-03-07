@@ -21,38 +21,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.AutoFixHigh
 import androidx.compose.material.icons.outlined.ColorLens
-import androidx.compose.material.icons.outlined.DocumentScanner
 import androidx.compose.material.icons.outlined.FilterBAndW
-import androidx.compose.material.icons.outlined.FindInPage
 import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material.icons.outlined.GifBox
 import androidx.compose.material.icons.outlined.Gradient
-import androidx.compose.material.icons.outlined.Panorama
-import androidx.compose.material.icons.outlined.Print
-import androidx.compose.material.icons.outlined.QrCode
-import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.Tag
 import androidx.compose.material.icons.twotone.Album
 import androidx.compose.material.icons.twotone.AutoFixHigh
 import androidx.compose.material.icons.twotone.ColorLens
 import androidx.compose.material.icons.twotone.Compare
-import androidx.compose.material.icons.twotone.DocumentScanner
 import androidx.compose.material.icons.twotone.FilterBAndW
-import androidx.compose.material.icons.twotone.FindInPage
 import androidx.compose.material.icons.twotone.FolderZip
 import androidx.compose.material.icons.twotone.GifBox
 import androidx.compose.material.icons.twotone.Gradient
-import androidx.compose.material.icons.twotone.Panorama
 import androidx.compose.material.icons.twotone.Preview
-import androidx.compose.material.icons.twotone.Print
-import androidx.compose.material.icons.twotone.QrCode
 import androidx.compose.material.icons.twotone.Tag
-import androidx.compose.material.icons.twotone.Unarchive
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.net.toUri
 import com.t8rin.imagetoolbox.core.resources.R
 import com.t8rin.imagetoolbox.core.resources.icons.ApngBox
+import com.t8rin.imagetoolbox.core.resources.icons.ArtTrack
 import com.t8rin.imagetoolbox.core.resources.icons.Ascii
 import com.t8rin.imagetoolbox.core.resources.icons.Base64
 import com.t8rin.imagetoolbox.core.resources.icons.Bolt
@@ -61,6 +50,7 @@ import com.t8rin.imagetoolbox.core.resources.icons.Collage
 import com.t8rin.imagetoolbox.core.resources.icons.Counter
 import com.t8rin.imagetoolbox.core.resources.icons.CropSmall
 import com.t8rin.imagetoolbox.core.resources.icons.DeleteSweep
+import com.t8rin.imagetoolbox.core.resources.icons.DocumentScanner
 import com.t8rin.imagetoolbox.core.resources.icons.Draw
 import com.t8rin.imagetoolbox.core.resources.icons.Encrypted
 import com.t8rin.imagetoolbox.core.resources.icons.Eraser
@@ -68,6 +58,7 @@ import com.t8rin.imagetoolbox.core.resources.icons.Exif
 import com.t8rin.imagetoolbox.core.resources.icons.ExifEdit
 import com.t8rin.imagetoolbox.core.resources.icons.Eyedropper
 import com.t8rin.imagetoolbox.core.resources.icons.FileImage
+import com.t8rin.imagetoolbox.core.resources.icons.FindInPage
 import com.t8rin.imagetoolbox.core.resources.icons.FormatPaintVariant
 import com.t8rin.imagetoolbox.core.resources.icons.ImageCombine
 import com.t8rin.imagetoolbox.core.resources.icons.ImageConvert
@@ -84,19 +75,23 @@ import com.t8rin.imagetoolbox.core.resources.icons.MultipleImageEdit
 import com.t8rin.imagetoolbox.core.resources.icons.Neurology
 import com.t8rin.imagetoolbox.core.resources.icons.NoiseAlt
 import com.t8rin.imagetoolbox.core.resources.icons.PaletteSwatch
+import com.t8rin.imagetoolbox.core.resources.icons.Panorama
 import com.t8rin.imagetoolbox.core.resources.icons.Pdf
 import com.t8rin.imagetoolbox.core.resources.icons.Preview
+import com.t8rin.imagetoolbox.core.resources.icons.Print
+import com.t8rin.imagetoolbox.core.resources.icons.QrCode
 import com.t8rin.imagetoolbox.core.resources.icons.Rotate90Cw
 import com.t8rin.imagetoolbox.core.resources.icons.Scanner
 import com.t8rin.imagetoolbox.core.resources.icons.ScissorsSmall
 import com.t8rin.imagetoolbox.core.resources.icons.ServiceToolbox
 import com.t8rin.imagetoolbox.core.resources.icons.ShieldLock
 import com.t8rin.imagetoolbox.core.resources.icons.SplitAlt
-import com.t8rin.imagetoolbox.core.resources.icons.Stack
+import com.t8rin.imagetoolbox.core.resources.icons.Stacks
 import com.t8rin.imagetoolbox.core.resources.icons.Stylus
 import com.t8rin.imagetoolbox.core.resources.icons.SwapVerticalCircle
 import com.t8rin.imagetoolbox.core.resources.icons.TagText
 import com.t8rin.imagetoolbox.core.resources.icons.TextSearch
+import com.t8rin.imagetoolbox.core.resources.icons.Unarchive
 import com.t8rin.imagetoolbox.core.resources.icons.VectorPolyline
 import com.t8rin.imagetoolbox.core.resources.icons.WallpaperAlt
 import com.t8rin.imagetoolbox.core.resources.icons.WandShine
@@ -238,6 +233,7 @@ internal fun Screen.simpleName(): String = when (this) {
     is PdfTools.Print -> "PdfTools_Print"
     is PdfTools.Preview -> "PdfTools_Preview"
     is PdfTools.ImagesToPdf -> "PdfTools_ImagesToPdf"
+    is PdfTools.ExtractPages -> "PdfTools_ExtractPages"
 }
 
 internal fun Screen.icon(): ImageVector? = when (this) {
@@ -282,7 +278,7 @@ internal fun Screen.icon(): ImageVector? = when (this) {
     is WebpTools -> Icons.Outlined.WebpBox
     is NoiseGeneration -> Icons.Outlined.NoiseAlt
     is CollageMaker -> Icons.Outlined.Collage
-    is MarkupLayers -> Icons.Outlined.Stack
+    is MarkupLayers -> Icons.Outlined.Stacks
     is Base64Tools -> Icons.Outlined.Base64
     is ChecksumTools -> Icons.Rounded.Tag
     is EditExif -> Icons.Outlined.ExifEdit
@@ -314,6 +310,7 @@ internal fun Screen.icon(): ImageVector? = when (this) {
     is PdfTools.Print -> Icons.Outlined.Print
     is PdfTools.Preview -> Icons.Outlined.Preview
     is PdfTools.ImagesToPdf -> Icons.Outlined.Scanner
+    is PdfTools.ExtractPages -> Icons.Outlined.ArtTrack
 }
 
 internal fun Screen.twoToneIcon(): ImageVector? = when (this) {
@@ -358,7 +355,7 @@ internal fun Screen.twoToneIcon(): ImageVector? = when (this) {
     is WebpTools -> Icons.TwoTone.WebpBox
     is NoiseGeneration -> Icons.Outlined.NoiseAlt
     is CollageMaker -> Icons.TwoTone.Collage
-    is MarkupLayers -> Icons.TwoTone.Stack
+    is MarkupLayers -> Icons.TwoTone.Stacks
     is Base64Tools -> Icons.TwoTone.Base64
     is ChecksumTools -> Icons.TwoTone.Tag
     is EditExif -> Icons.TwoTone.ExifEdit
@@ -390,6 +387,7 @@ internal fun Screen.twoToneIcon(): ImageVector? = when (this) {
     is PdfTools.Print -> Icons.TwoTone.Print
     is PdfTools.Preview -> Icons.TwoTone.Preview
     is PdfTools.ImagesToPdf -> Icons.TwoTone.Scanner
+    is PdfTools.ExtractPages -> Icons.TwoTone.ArtTrack
 }
 
 internal object UriSerializer : KSerializer<AndroidUri> {
@@ -473,7 +471,7 @@ private object ScreenConstantsImpl : ScreenConstants {
             ),
             ScreenGroup(
                 entries = listOf(
-                    PdfTools(),
+                    PdfTools,
                     DocumentScanner,
                     ScanQrCode(),
                     ColorTools,
@@ -502,5 +500,5 @@ private object ScreenConstantsImpl : ScreenConstants {
             .sortedBy { it.id }
     }
 
-    override val FEATURES_COUNT = 81 + PdfTools.options.size
+    override val FEATURES_COUNT = 80 + PdfTools.options.size
 }

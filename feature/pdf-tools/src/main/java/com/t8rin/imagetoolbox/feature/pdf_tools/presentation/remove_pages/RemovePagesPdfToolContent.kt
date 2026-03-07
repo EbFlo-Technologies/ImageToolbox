@@ -52,10 +52,6 @@ fun RemovePagesPdfToolContent(
         canShowScreenData = component.uri != null,
         title = stringResource(R.string.remove_pages_pdf),
         canSave = component.pagesToDelete.size < pagesCount,
-        actions = {},
-        imagePreview = {},
-        placeImagePreview = false,
-        showImagePreviewAsStickyHeader = false,
         controls = {
             component.uri?.let {
                 PdfPreviewItem(
@@ -84,7 +80,8 @@ fun RemovePagesPdfToolContent(
                         component.pagesToDelete.toggle(it)
                     )
                 },
-                onUpdatePages = component::updatePages
+                onUpdatePages = component::updatePages,
+                pagesCount = pagesCount
             )
         },
         onFilledPassword = {

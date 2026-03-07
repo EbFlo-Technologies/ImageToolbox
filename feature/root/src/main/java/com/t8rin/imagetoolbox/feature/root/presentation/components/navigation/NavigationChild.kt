@@ -90,6 +90,8 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.crop.CropPdfToolCon
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.crop.screenLogic.CropPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_images.ExtractImagesPdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_images.screenLogic.ExtractImagesPdfToolComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_pages.ExtractPagesPdfToolContent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_pages.screenLogic.ExtractPagesPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.flatten.FlattenPdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.flatten.screenLogic.FlattenPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.grayscale.GrayscalePdfToolContent
@@ -116,8 +118,8 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.remove_pages.Remove
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.remove_pages.screenLogic.RemovePagesPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.repair.RepairPdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.repair.screenLogic.RepairPdfToolComponent
-import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.PdfToolsContent
-import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.screenLogic.PdfToolsComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.RootPdfToolsContent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.screenLogic.RootPdfToolsComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.rotate.RotatePdfToolContent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.rotate.screenLogic.RotatePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.signature.SignaturePdfToolContent
@@ -295,9 +297,9 @@ internal sealed interface NavigationChild {
         override fun Content() = NoiseGenerationContent(component)
     }
 
-    class PdfTools(private val component: PdfToolsComponent) : NavigationChild {
+    class RootPdfTools(private val component: RootPdfToolsComponent) : NavigationChild {
         @Composable
-        override fun Content() = PdfToolsContent(component)
+        override fun Content() = RootPdfToolsContent(component)
     }
 
     class PickColorFromImage(private val component: PickColorFromImageComponent) : NavigationChild {
@@ -531,5 +533,11 @@ internal sealed interface NavigationChild {
     class ImagesToPdfTool(private val component: ImagesToPdfToolComponent) : NavigationChild {
         @Composable
         override fun Content() = ImagesToPdfToolContent(component)
+    }
+
+    class ExtractPagesPdfTool(private val component: ExtractPagesPdfToolComponent) :
+        NavigationChild {
+        @Composable
+        override fun Content() = ExtractPagesPdfToolContent(component)
     }
 }

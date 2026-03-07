@@ -55,6 +55,7 @@ import com.t8rin.imagetoolbox.feature.palette_tools.presentation.screenLogic.Pal
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.compress.screenLogic.CompressPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.crop.screenLogic.CropPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_images.screenLogic.ExtractImagesPdfToolComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.extract_pages.screenLogic.ExtractPagesPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.flatten.screenLogic.FlattenPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.grayscale.screenLogic.GrayscalePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.images_to_pdf.screenLogic.ImagesToPdfToolComponent
@@ -68,7 +69,7 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.protect.screenLogic
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.rearrange.screenLogic.RearrangePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.remove_pages.screenLogic.RemovePagesPdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.repair.screenLogic.RepairPdfToolComponent
-import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.screenLogic.PdfToolsComponent
+import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.screenLogic.RootPdfToolsComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.rotate.screenLogic.RotatePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.signature.screenLogic.SignaturePdfToolComponent
 import com.t8rin.imagetoolbox.feature.pdf_tools.presentation.split.screenLogic.SplitPdfToolComponent
@@ -99,6 +100,7 @@ import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.Na
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.EditExif
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.EraseBackground
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ExtractImagesPdfTool
+import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ExtractPagesPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.Filter
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.FlattenPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.FormatConversion
@@ -110,6 +112,7 @@ import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.Na
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ImageSplitting
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ImageStacking
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ImageStitching
+import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ImagesToPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.JxlTools
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.LibrariesInfo
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.LibraryDetails
@@ -124,7 +127,6 @@ import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.Na
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.OCRPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PageNumbersPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PaletteTools
-import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PdfTools
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PickColorFromImage
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PreviewPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.PrintPdfTool
@@ -134,6 +136,7 @@ import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.Na
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.RemovePagesPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.RepairPdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ResizeAndConvert
+import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.RootPdfTools
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.RotatePdfTool
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.ScanQrCode
 import com.t8rin.imagetoolbox.feature.root.presentation.components.navigation.NavigationChild.Settings
@@ -188,7 +191,7 @@ internal class ChildProvider @Inject constructor(
     private val limitResizeComponentFactory: LimitsResizeComponent.Factory,
     private val loadNetImageComponentFactory: LoadNetImageComponent.Factory,
     private val noiseGenerationComponentFactory: NoiseGenerationComponent.Factory,
-    private val pdfToolsComponentFactory: PdfToolsComponent.Factory,
+    private val rootPdfToolsComponentFactory: RootPdfToolsComponent.Factory,
     private val pickColorFromImageComponentFactory: PickColorFromImageComponent.Factory,
     private val recognizeTextComponentFactory: RecognizeTextComponent.Factory,
     private val resizeAndConvertComponentFactory: ResizeAndConvertComponent.Factory,
@@ -238,6 +241,7 @@ internal class ChildProvider @Inject constructor(
     private val printPdfToolComponentFactory: PrintPdfToolComponent.Factory,
     private val previewPdfToolComponentFactory: PreviewPdfToolComponent.Factory,
     private val imagesToPdfToolComponentFactory: ImagesToPdfToolComponent.Factory,
+    private val extractPagesPdfToolComponent: ExtractPagesPdfToolComponent.Factory,
 ) {
     fun RootComponent.createChild(
         config: Screen,
@@ -463,10 +467,9 @@ internal class ChildProvider @Inject constructor(
             )
         )
 
-        is Screen.PdfTools -> PdfTools(
-            pdfToolsComponentFactory(
+        is Screen.PdfTools -> RootPdfTools(
+            rootPdfToolsComponentFactory(
                 componentContext = componentContext,
-                initialType = config.type,
                 onGoBack = ::navigateBack,
                 onNavigate = ::navigateTo
             )
@@ -869,9 +872,18 @@ internal class ChildProvider @Inject constructor(
             )
         )
 
-        is Screen.PdfTools.ImagesToPdf -> NavigationChild.ImagesToPdfTool(
+        is Screen.PdfTools.ImagesToPdf -> ImagesToPdfTool(
             imagesToPdfToolComponentFactory(
                 initialUris = config.uris,
+                componentContext = componentContext,
+                onGoBack = ::navigateBack,
+                onNavigate = ::replaceTo
+            )
+        )
+
+        is Screen.PdfTools.ExtractPages -> ExtractPagesPdfTool(
+            extractPagesPdfToolComponent(
+                initialUri = config.uri,
                 componentContext = componentContext,
                 onGoBack = ::navigateBack,
                 onNavigate = ::replaceTo

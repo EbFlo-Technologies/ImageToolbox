@@ -23,4 +23,5 @@ data class PdfWatermarkParams(
     val rotation: Float = 315f,
     val opacity: Float = 0.3f,
     val pages: List<Int> = emptyList(),
+    val text: String = "Watermark",
 )

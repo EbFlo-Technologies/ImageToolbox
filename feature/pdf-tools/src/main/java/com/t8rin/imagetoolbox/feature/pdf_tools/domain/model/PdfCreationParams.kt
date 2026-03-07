@@ -17,7 +17,10 @@
 
 package com.t8rin.imagetoolbox.feature.pdf_tools.domain.model
 
-sealed interface PdfToImagesAction {
-    data class PagesCount(val count: Int) : PdfToImagesAction
-    data class Progress(val index: Int, val image: Any) : PdfToImagesAction
-}
+import com.t8rin.imagetoolbox.core.domain.image.model.Preset
+
+data class PdfCreationParams(
+    val scaleSmallImagesToLarge: Boolean = false,
+    val preset: Preset.Percentage = Preset.Original,
+    val quality: Int = 85
+)

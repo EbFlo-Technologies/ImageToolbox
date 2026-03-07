@@ -70,11 +70,11 @@ internal fun BasePdfToolContent(
     isPickedAlready: Boolean,
     canShowScreenData: Boolean,
     title: String,
-    actions: @Composable RowScope.() -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
     topAppBarPersistentActions: @Composable RowScope.() -> Unit = {},
-    imagePreview: @Composable () -> Unit,
-    placeImagePreview: Boolean = true,
-    showImagePreviewAsStickyHeader: Boolean = true,
+    imagePreview: @Composable () -> Unit = {},
+    placeImagePreview: Boolean = false,
+    showImagePreviewAsStickyHeader: Boolean = false,
     controls: (@Composable ColumnScope.(LazyListState) -> Unit)?,
     canSave: Boolean = true,
     canShare: Boolean = canSave,
@@ -85,7 +85,11 @@ internal fun BasePdfToolContent(
     secondaryButtonIcon: ImageVector = Icons.Rounded.FileOpen,
     secondaryButtonText: String = stringResource(R.string.pick_file),
     noDataText: String = stringResource(R.string.pick_file_to_start),
-    drawBottomShadow: Boolean = true
+    onPrimaryButtonClick: (() -> Unit)? = null,
+    onPrimaryButtonLongClick: (() -> Unit)? = null,
+    drawBottomShadow: Boolean = true,
+    shareDialogTitle: String = "PDF",
+    shareDialogIcon: ImageVector = Icons.Outlined.Pdf
 ) {
     val essentials = rememberLocalEssentials()
     val showConfetti: () -> Unit = essentials::showConfetti
@@ -159,8 +163,8 @@ internal fun BasePdfToolContent(
                         onFailure = essentials::showFailureToast
                     )
                 },
-                dialogTitle = "PDF",
-                dialogIcon = Icons.Outlined.Pdf
+                dialogTitle = shareDialogTitle,
+                dialogIcon = shareDialogIcon
             )
 
             ProcessImagesPreferenceSheet(
@@ -206,9 +210,10 @@ internal fun BasePdfToolContent(
                 secondaryButtonIcon = secondaryButtonIcon,
                 secondaryButtonText = secondaryButtonText,
                 onSecondaryButtonClick = pdfPicker::pickFile,
-                onPrimaryButtonClick = {
+                onPrimaryButtonClick = onPrimaryButtonClick ?: {
                     saveLauncher.make(component.createTargetFilename())
                 },
+                onPrimaryButtonLongClick = onPrimaryButtonLongClick,
                 actions = {
                     if (isPortrait) actions()
                 },

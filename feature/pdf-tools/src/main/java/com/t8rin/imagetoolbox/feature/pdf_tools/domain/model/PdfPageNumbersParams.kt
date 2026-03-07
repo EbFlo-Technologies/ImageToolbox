@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.apache.org/licenses/LICENSE-2.0>.
  */
 
-package com.t8rin.imagetoolbox.feature.pdf_tools.presentation.root.components
+package com.t8rin.imagetoolbox.feature.pdf_tools.domain.model
 
-import android.net.Uri
+import com.t8rin.imagetoolbox.core.domain.model.Position
 
-data class PdfToImageState(
-    val uri: Uri,
-    val pagesCount: Int,
-    val selectedPages: List<Int>
+data class PdfPageNumbersParams(
+    val labelFormat: String = "Page {n} of {total}",
+    val position: Position = Position.BottomCenter,
+    val color: Int = -7829368
 )

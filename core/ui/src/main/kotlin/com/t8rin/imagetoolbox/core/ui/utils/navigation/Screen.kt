@@ -22,7 +22,6 @@ package com.t8rin.imagetoolbox.core.ui.utils.navigation
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoFixHigh
-import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.FilePresent
 import androidx.compose.material.icons.rounded.Animation
 import androidx.compose.material.icons.rounded.Gif
@@ -282,68 +281,37 @@ sealed class Screen(
     )
 
     @Serializable
-    data class PdfTools(
-        @SerialName("dataType") val type: Type? = null
-    ) : Screen(
+    data object PdfTools : Screen(
         id = 16,
         title = R.string.pdf_tools,
         subtitle = R.string.pdf_tools_sub
     ) {
-        @Serializable
-        sealed class Type(
-            @StringRes val title: Int,
-            @StringRes val subtitle: Int
-        ) {
-
-            val icon: ImageVector
-                get() = when (this) {
-                    is PdfToImages -> Icons.Outlined.ArtTrack
-                }
-
-            @Serializable
-            data class PdfToImages(
-                val pdfUri: Uri? = null
-            ) : Type(
-                title = R.string.pdf_to_images,
-                subtitle = R.string.pdf_to_images_sub
+        val options: List<Screen> by lazy {
+            listOf(
+                Preview(),
+                ImagesToPdf(),
+                ExtractPages(),
+                Merge(),
+                Split(),
+                RemovePages(),
+                Rotate(),
+                Rearrange(),
+                Crop(),
+                PageNumbers(),
+                Watermark(),
+                Signature(),
+                Compress(),
+                Flatten(),
+                Print(),
+                Grayscale(),
+                Repair(),
+                Protect(),
+                Unlock(),
+                Metadata(),
+                ExtractImages(),
+                OCR(),
+                ZipConvert(),
             )
-
-            companion object {
-                val entries by lazy {
-                    listOf(
-                        PdfToImages()
-                    )
-                }
-            }
-        }
-
-        companion object {
-            val options: List<Screen> by lazy {
-                listOf(
-                    Preview(),
-                    ImagesToPdf(),
-                    Merge(),
-                    Split(),
-                    RemovePages(),
-                    Rotate(),
-                    Rearrange(),
-                    Crop(),
-                    PageNumbers(),
-                    Watermark(),
-                    Signature(),
-                    Compress(),
-                    Flatten(),
-                    Print(),
-                    Grayscale(),
-                    Repair(),
-                    Protect(),
-                    Unlock(),
-                    Metadata(),
-                    ExtractImages(),
-                    OCR(),
-                    ZipConvert(),
-                )
-            }
         }
 
         @Serializable
@@ -543,6 +511,15 @@ sealed class Screen(
             title = R.string.images_to_pdf,
             subtitle = R.string.images_to_pdf_sub
         )
+
+        @Serializable
+        data class ExtractPages(
+            val uri: Uri? = null
+        ) : Screen(
+            id = 66,
+            title = R.string.pdf_to_images,
+            subtitle = R.string.pdf_to_images_sub
+        )
     }
 
     @Serializable
@@ -636,7 +613,7 @@ sealed class Screen(
 
             val icon: ImageVector
                 get() = when (this) {
-                    is GifToImage -> Icons.Outlined.Collections
+                    is GifToImage -> Icons.Outlined.ArtTrack
                     is GifToJxl -> Icons.Filled.Jxl
                     is ImageToGif -> Icons.Rounded.Gif
                     is GifToWebp -> Icons.Rounded.Webp
@@ -703,7 +680,7 @@ sealed class Screen(
 
             val icon: ImageVector
                 get() = when (this) {
-                    is ApngToImage -> Icons.Outlined.Collections
+                    is ApngToImage -> Icons.Outlined.ArtTrack
                     is ApngToJxl -> Icons.Filled.Jxl
                     is ImageToApng -> Icons.Rounded.Apng
                 }
@@ -771,7 +748,7 @@ sealed class Screen(
                 get() = when (this) {
                     is ImageToJxl -> Icons.Rounded.Animation
                     is JpegToJxl -> Icons.Filled.Jxl
-                    is JxlToImage -> Icons.Outlined.Collections
+                    is JxlToImage -> Icons.Outlined.ArtTrack
                     is JxlToJpeg -> Icons.Outlined.Jpg
                 }
 
@@ -896,7 +873,7 @@ sealed class Screen(
 
             val icon: ImageVector
                 get() = when (this) {
-                    is WebpToImage -> Icons.Outlined.Collections
+                    is WebpToImage -> Icons.Outlined.ArtTrack
                     is ImageToWebp -> Icons.Rounded.Webp
                 }
 

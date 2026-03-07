@@ -274,7 +274,7 @@
     <string name="features">Eigenschaften</string>
     <string name="compatibility">Kompatibilität</string>
     <string name="cipher">Chiffrieren</string>
-    <string name="cipher_sub">Ver- und Entschlüsselung beliebiger Dateien (nicht nur des Bildes) auf der Grundlage verschiedenen AES Verschlüsselungsalgorithmen</string>
+    <string name="cipher_sub">Ver- und Entschlüsselung beliebiger Dateien (nicht nur des Bildes) auf der Grundlage verschiedenen Verschlüsselungsalgorithmen</string>
     <string name="decrypt">Entschlüsseln</string>
     <string name="implementation">Implementierung</string>
     <string name="encrypt">Verschlüsseln</string>

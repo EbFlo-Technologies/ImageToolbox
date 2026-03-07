@@ -17,10 +17,7 @@
 
 package com.t8rin.imagetoolbox.feature.pdf_tools.domain.model
 
-import com.t8rin.imagetoolbox.core.domain.model.Position
-
-data class PageNumbersParams(
-    val labelFormat: String = "Page {n} of {total}",
-    val position: Position = Position.BottomCenter,
-    val color: Int = -7829368
-)
+sealed interface ExtractPagesAction {
+    data class PagesCount(val count: Int) : ExtractPagesAction
+    data class Progress(val index: Int, val image: Any) : ExtractPagesAction
+}

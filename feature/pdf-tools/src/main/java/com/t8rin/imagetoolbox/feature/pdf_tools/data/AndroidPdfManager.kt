@@ -39,12 +39,10 @@ import com.t8rin.imagetoolbox.core.domain.image.ImageScaler
 import com.t8rin.imagetoolbox.core.domain.image.ImageShareProvider
 import com.t8rin.imagetoolbox.core.domain.image.model.ImageFormat
 import com.t8rin.imagetoolbox.core.domain.image.model.ImageInfo
-import com.t8rin.imagetoolbox.core.domain.image.model.Preset
 import com.t8rin.imagetoolbox.core.domain.image.model.ResizeType
 import com.t8rin.imagetoolbox.core.domain.model.HashingType
 import com.t8rin.imagetoolbox.core.domain.model.IntegerSize
 import com.t8rin.imagetoolbox.core.domain.model.Position
-import com.t8rin.imagetoolbox.core.domain.model.RectModel
 import com.t8rin.imagetoolbox.core.domain.utils.safeCast
 import com.t8rin.imagetoolbox.core.domain.utils.timestamp
 import com.t8rin.imagetoolbox.core.resources.R
@@ -68,11 +66,13 @@ import com.t8rin.imagetoolbox.feature.pdf_tools.data.utils.setColor
 import com.t8rin.imagetoolbox.feature.pdf_tools.data.utils.writePage
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.PdfHelper
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.PdfManager
-import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.ImagesToPdfParams
-import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PageNumbersParams
+import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.ExtractPagesAction
+import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfCreationParams
+import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfCropParams
+import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfExtractPagesParams
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfMetadata
+import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfPageNumbersParams
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfSignatureParams
-import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfToImagesAction
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PdfWatermarkParams
 import com.t8rin.imagetoolbox.feature.pdf_tools.domain.model.PrintPdfParams
 import com.t8rin.logger.makeLog
@@ -89,6 +89,7 @@ import com.tom_roush.pdfbox.util.Matrix
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -104,21 +105,20 @@ internal class AndroidPdfManager @Inject constructor(
     dispatchersHolder: DispatchersHolder
 ) : DispatchersHolder by dispatchersHolder, PdfManager, PdfHelper by helper {
 
-    override fun convertPdfToImages(
+    override fun extractPages(
         uri: String,
-        pages: List<Int>?,
-        preset: Preset.Percentage
-    ): Flow<PdfToImagesAction> = channelFlow {
-        val scale = preset.value / 100f
+        params: PdfExtractPagesParams
+    ): Flow<ExtractPagesAction> = channelFlow {
+        val scale = params.preset.value / 100f
         val dpi = 72f * scale
 
         catchPdf {
             helper.useRenderer(uri) { renderer ->
-                send(PdfToImagesAction.PagesCount(pages?.size ?: renderer.pageCount))
-
-                pages.orAll(renderer.pDocument).forEach { pageIndex ->
+                params.pages.orAll(renderer.pDocument).also {
+                    send(ExtractPagesAction.PagesCount(it.size))
+                }.forEach { pageIndex ->
                     send(
-                        PdfToImagesAction.Progress(
+                        ExtractPagesAction.Progress(
                             index = pageIndex,
                             image = renderer.safeRenderDpi(
                                 pageIndex = pageIndex,
@@ -130,11 +130,11 @@ internal class AndroidPdfManager @Inject constructor(
             }
         }
         close()
-    }
+    }.flowOn(defaultDispatcher)
 
-    override suspend fun convertImagesToPdf(
+    override suspend fun createPdf(
         imageUris: List<String>,
-        params: ImagesToPdfParams
+        params: PdfCreationParams
     ): String = catchPdf {
         createPdf { newDoc ->
             val scale = params.preset.value / 100f
@@ -300,7 +300,7 @@ internal class AndroidPdfManager @Inject constructor(
 
     override suspend fun addPageNumbers(
         uri: String,
-        params: PageNumbersParams
+        params: PdfPageNumbersParams
     ): String = catchPdf {
         usePdf(uri) { document ->
             val font = document.defaultFont
@@ -391,7 +391,6 @@ internal class AndroidPdfManager @Inject constructor(
 
     override suspend fun addWatermark(
         uri: String,
-        watermarkText: String,
         params: PdfWatermarkParams
     ): String = catchPdf {
         val color = Color(params.color)
@@ -403,7 +402,7 @@ internal class AndroidPdfManager @Inject constructor(
                 val page = document.getPageSafe(pageIndex)
 
                 val textWidth =
-                    font.getStringWidth(watermarkText) / 1000f * params.fontSize
+                    font.getStringWidth(params.text) / 1000f * params.fontSize
 
                 val radians = Math.toRadians(-params.rotation.toDouble())
                 val cropBox = page.cropBox
@@ -426,7 +425,7 @@ internal class AndroidPdfManager @Inject constructor(
                     setColor(color.copy(params.opacity))
                     setTextMatrix(matrix)
                     newLineAtOffset(-textWidth / 2f, 0f)
-                    showText(watermarkText)
+                    showText(params.text)
                     endText()
                 }
             }
@@ -442,52 +441,56 @@ internal class AndroidPdfManager @Inject constructor(
 
     override suspend fun addSignature(
         uri: String,
-        signatureImage: Any,
         params: PdfSignatureParams
     ): String = catchPdf {
         usePdf(uri) { document ->
-            val pdImage = imageGetter.getImage(data = signatureImage)!!.asXObject(
+            val signatureImage = imageGetter.getImage(data = params.signatureImage)!!.asXObject(
                 document = document,
                 quality = 1f
             )
 
-            val imageAspect =
-                pdImage.width.toFloat() / pdImage.height.toFloat()
+            val imageAspect = signatureImage.width.toFloat() / signatureImage.height.toFloat()
 
             params.pages.orAll(document).forEach { pageIndex ->
                 val page = document.getPageSafe(pageIndex)
 
-                val cropBox = page.cropBox
+                val crop = page.cropBox
 
-                val pageWidth = cropBox.width
-                val pageHeight = cropBox.height
-                val originX = cropBox.lowerLeftX
-                val originY = cropBox.lowerLeftY
+                val pageWidth = crop.width
+                val pageHeight = crop.height
+                val originX = crop.lowerLeftX
+                val originY = crop.lowerLeftY
 
                 val targetWidth = pageWidth * params.size
                 val targetHeight = targetWidth / imageAspect
 
                 val centerX = pageWidth * params.x
-                val centerY = pageHeight * params.y
+                val centerY = pageHeight * (1f - params.y)
 
-                var targetX = centerX - targetWidth / 2f
-                var targetY = centerY - targetHeight / 2f
+                var x = centerX - targetWidth / 2f
+                var y = centerY - targetHeight / 2f
 
-                targetX = targetX.coerceIn(0f, pageWidth - targetWidth)
-                targetY = targetY.coerceIn(0f, pageHeight - targetHeight)
+                x = x.coerceIn(0f, pageWidth - targetWidth)
+                y = y.coerceIn(0f, pageHeight - targetHeight)
 
-                targetX += originX
-                targetY += originY
+                x += originX
+                y += originY
 
                 document.writePage(page) {
                     setAlpha(params.opacity)
-                    drawImage(
-                        pdImage,
-                        targetX,
-                        targetY,
-                        targetWidth,
-                        targetHeight
+                    saveGraphicsState()
+                    transform(
+                        Matrix(
+                            targetWidth,
+                            0f,
+                            0f,
+                            -targetHeight,
+                            x,
+                            y + targetHeight
+                        )
                     )
+                    drawImage(signatureImage, 0f, 0f, 1f, 1f)
+                    restoreGraphicsState()
                 }
             }
 
@@ -652,11 +655,12 @@ internal class AndroidPdfManager @Inject constructor(
 
     override suspend fun cropPdf(
         uri: String,
-        pages: List<Int>?,
-        rect: RectModel
+        params: PdfCropParams
     ): String = catchPdf {
         usePdf(uri) { document ->
-            pages.orAll(document).forEach { pageIndex ->
+            val rect = params.rect
+
+            params.pages.orAll(document).forEach { pageIndex ->
                 val page = document.getPageSafe(pageIndex)
 
                 val cropBox = page.cropBox
@@ -860,10 +864,9 @@ internal class AndroidPdfManager @Inject constructor(
 
     override suspend fun printPdf(
         uri: String,
-        quality: Float,
         params: PrintPdfParams
     ): String = catchPdf {
-        val dpi = 72f + (228f * quality)
+        val dpi = 72f + (228f * params.quality)
 
         usePdf(uri) { document ->
             val renderer = PdfRenderer(document)
@@ -951,7 +954,10 @@ internal class AndroidPdfManager @Inject constructor(
                                     input = renderer.safeRenderDpi(pageIndex, dpi),
                                     color = Color.White.toArgb()
                                 )
-                                .asXObject(newDoc, quality)
+                                .asXObject(
+                                    document = newDoc,
+                                    quality = params.quality
+                                )
 
                             drawImage(pdImage, x, y, scaledWidth, scaledHeight)
                         }
